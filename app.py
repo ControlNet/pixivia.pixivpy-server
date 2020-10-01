@@ -65,5 +65,10 @@ def me_following_works():
     return json.dumps(api.me_following_works()["response"])
 
 
+@app.route("/recommend/image")
+def illust_recommended():
+    return json.dumps(api.illust_recommended()["illusts"])
+
+
 if __name__ == '__main__':
     app.run(host="127.0.0.1", port="5000")
