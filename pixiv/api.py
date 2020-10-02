@@ -36,7 +36,6 @@ class API:
 
         if use_token:
             try:
-                print(token)
                 response = api.auth(refresh_token=token["refresh_token"])
             except PixivError as e:
                 if str(e).split("\n")[0] == "[ERROR] auth() failed! check refresh_token.":

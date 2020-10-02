@@ -28,7 +28,6 @@ def handle_auth_validation(app_api=False):
         def wrapper(*args, **kwargs):
             self = args[0]
             args = args[1:]
-            print(kwargs)
             try:
                 response = auth_validation(block, self, *args, **kwargs)
             except NotLoginError:

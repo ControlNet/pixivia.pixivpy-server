@@ -14,7 +14,7 @@ api = API(pixiv_account, pixiv_password, token_path, image_saving_dir)
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!1'
+    return 'Pixivpy Server Running'
 
 
 @app.route("/query/image/<image_id>")
@@ -72,3 +72,4 @@ def illust_recommended():
 
 if __name__ == '__main__':
     app.run(host="127.0.0.1", port="5000")
+
