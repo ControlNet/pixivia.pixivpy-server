@@ -22,6 +22,11 @@ def query_image(image_id: str):
     return api.works(illust_id=int(image_id))
 
 
+@app.route("/query/user/<user_id>")
+def query_user(user_id: str):
+    return api.users(int(user_id))["response"][0]
+
+
 @app.route("/download/image/<image_id>")
 def download_image(image_id: str):
     response = api.works(illust_id=int(image_id))

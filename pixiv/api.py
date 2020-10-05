@@ -95,3 +95,7 @@ class API:
     @handle_auth_validation(app_api=True)
     def illust_recommended(self) -> JsonDict:
         return self.aapi.illust_recommended()
+
+    @handle_auth_validation(app_api=False)
+    def users(self, user_id: int):
+        return self.api.users(author_id=user_id)
