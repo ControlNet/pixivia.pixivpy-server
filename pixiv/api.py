@@ -1,7 +1,7 @@
 import json
 from json.decoder import JSONDecodeError
 
-from pixivpy3 import PixivAPI, AppPixivAPI
+from pixivpy3 import PixivAPI, ByPassSniApi
 from pixivpy3.api import BasePixivAPI
 from pixivpy3.utils import JsonDict, PixivError
 
@@ -9,11 +9,13 @@ from pixiv.validation import handle_auth_validation
 
 
 class API:
-    def __init__(self, pixiv_account: str, pixiv_password: str, token_path: str, image_saving_dir: str):
-        self.api: PixivAPI = PixivAPI()
-        self.aapi: AppPixivAPI = AppPixivAPI()
+    def __init__(self, pixiv_account: str, pixiv_password: str, pixiv_id: str, token_path: str, image_saving_dir: str):
+        self.api: PixivAPI = PixivAPI()  # depreciated
+        self.aapi: ByPassSniApi = ByPassSniApi()
+        self.aapi.require_appapi_hosts(hostname="public-api.secure.pixiv.net")
         self.pixiv_account: str = pixiv_account
         self.pixiv_password: str = pixiv_password
+        self.id = int(pixiv_id)
         self.token_path: str = token_path
         self.image_saving_dir: str = image_saving_dir
 
@@ -27,10 +29,13 @@ class API:
             except (FileNotFoundError, JSONDecodeError):
                 use_token = False
             else:
-                if token["refresh_token"] is None or token["access_token"] is None:
+                try:
+                    if token["refresh_token"] is None or token["access_token"] is None:
+                        use_token = False
+                    else:
+                        use_token = True
+                except KeyError:
                     use_token = False
-                else:
-                    use_token = True
         else:
             use_token = False
 
@@ -57,30 +62,25 @@ class API:
                 "refresh_token": api.refresh_token
             }))
 
-    @handle_auth_validation(app_api=False)
-    def works(self, illust_id: int, include_sanity_level: bool = False) -> JsonDict:
-        return self.api.works(illust_id=illust_id, include_sanity_level=include_sanity_level)
+    @handle_auth_validation(app_api=True)
+    def works(self, illust_id: int) -> JsonDict:
+        return self.aapi.illust_detail(illust_id=illust_id)
 
-    @handle_auth_validation(app_api=False)
     def download(self, url, prefix="", name=None, replace=False, fname=None,
                  referer='https://app-api.pixiv.net/') -> bool:
         return self.api.download(url, prefix=prefix, path=self.image_saving_dir, name=name, replace=replace,
                                  fname=fname,
                                  referer=referer)
 
-    @handle_auth_validation(app_api=False)
-    def me_following_works(self, page=1, per_page=30,
-                           image_sizes=None,
-                           include_stats=True, include_sanity_level=True) -> JsonDict:
-        if image_sizes is None:
-            image_sizes = ['px_128x128', 'px_480mw', 'large']
-        return self.api.me_following_works(page, per_page, image_sizes, include_stats, include_sanity_level)
+    @handle_auth_validation(app_api=True)
+    def me_following_works(self, page=1) -> JsonDict:
+        return self.aapi.illust_follow(offset=(page - 1) * 30)
 
-    @handle_auth_validation(app_api=False)
-    def me_following(self, page=1, per_page=30, publicity='public') -> JsonDict:
-        return self.api.me_following(page=page, per_page=per_page, publicity=publicity)
+    @handle_auth_validation(app_api=True)
+    def me_following(self, page=1, publicity='public') -> JsonDict:
+        return self.aapi.user_following(user_id=self.id, offset=(page - 1) * 30, restrict=publicity)
 
-    @handle_auth_validation(app_api=False)
+    @handle_auth_validation(app_api=True)
     def follow(self, user_id: int) -> str:
         return self.api.me_favorite_users_follow(user_id)["status"]
 
@@ -88,14 +88,10 @@ class API:
     def unfollow(self, user_id: int) -> str:
         return self.api.me_favorite_users_unfollow(user_id)["status"]
 
-    @handle_auth_validation(app_api=False)
-    def me_following_works(self) -> JsonDict:
-        return self.api.me_following_works()
-
     @handle_auth_validation(app_api=True)
     def illust_recommended(self) -> JsonDict:
         return self.aapi.illust_recommended()
 
     @handle_auth_validation(app_api=False)
     def users(self, user_id: int) -> JsonDict:
-        return self.api.users(author_id=user_id)
+        return self.aapi.user_detail(user_id=user_id)

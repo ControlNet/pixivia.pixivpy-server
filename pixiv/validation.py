@@ -15,9 +15,9 @@ def auth_validation(block: Callable, self, *args, **kwargs):
         else:
             raise PixivError(message)
     try:
-        if response["status"] == "failure":
-            if response["errors"]["system"]["message"] == "The access token provided is invalid.":
-                raise TokenError("Token invalid")
+        if response["error"]["message"] == "Error occurred at the OAuth process. Please check your Access Token " \
+                                           "to fix this. Error Message: invalid_grant":
+            raise TokenError("Token invalid")
     except (TypeError, KeyError):
         pass
     return response

@@ -7,9 +7,9 @@ from flask import Flask
 from pixiv.api import API
 
 app = Flask(__name__)
-_, pixiv_account, pixiv_password, token_path, image_saving_dir = sys.argv
+_, pixiv_account, pixiv_password, pixiv_id, token_path, image_saving_dir = sys.argv
 
-api = API(pixiv_account, pixiv_password, token_path, image_saving_dir)
+api = API(pixiv_account, pixiv_password, pixiv_id, token_path, image_saving_dir)
 
 
 @app.route('/')
@@ -19,7 +19,7 @@ def hello_world():
 
 @app.route("/query/image/<image_id>")
 def query_image(image_id: str):
-    return api.works(illust_id=int(image_id))
+    return json.dumps(api.works(illust_id=int(image_id)))
 
 
 @app.route("/query/user/<user_id>")
@@ -30,7 +30,7 @@ def query_user(user_id: str):
 @app.route("/download/image/<image_id>")
 def download_image(image_id: str):
     response = api.works(illust_id=int(image_id))
-    urls = response["response"][0]["image_urls"]
+    urls = response["illust"]["image_urls"]
     if "large" in urls.keys():
         url = urls["large"]
     elif "medium" in urls.keys():
@@ -48,10 +48,11 @@ def download_image(image_id: str):
 
 @app.route("/following/display")
 def following_display():
-    result = api.me_following(per_page=20)
     all_following = []
-    for page in range(result["pagination"]["pages"]):
-        all_following = all_following + api.me_following(page=page + 1, per_page=20)["response"]
+    terminate = False
+    page = 1
+    while not terminate:
+        all_following += list(map(lambda x: x["user"], api.me_following(page=page)["user_previews"]))
     return json.dumps(all_following)
 
 
@@ -67,7 +68,7 @@ def unfollow_user(user_id: str):
 
 @app.route("/following/new")
 def me_following_works():
-    return json.dumps(api.me_following_works()["response"])
+    return json.dumps(api.me_following_works()["illusts"])
 
 
 @app.route("/recommend/image")
